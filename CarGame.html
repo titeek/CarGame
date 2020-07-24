@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Grafika animacyjna</title>
+        
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: dimgray;
+            }
+
+            canvas {
+                border: 2px solid white;
+            }
+
+        </style>
+
+        <script type="text/javascript">
+            var canvas;
+            var ctx;
+            const tableWidth = 400;
+            const tableHeight = 600;
+            
+            let flagMouse = 0;
+            
+            const lifeMIN = -8000;
+            const lifeMAX = -2000;
+            const pointsMIN = -4000;
+            const pointsMAX = -1000;
+            const obstacleMIN = -400;
+            const obstacleMAX = -10;
+            const fastMIN = -2500;
+            const fastMAX = -1000;
+            const slowMIN = -2500;
+            const slowMAX = -1000;
+
+            const playerWidth = 40 ;
+            const playerHeight = 40;
+            const playerSpeed = 5;
+
+            const obstacleWidth = 80;
+            const obstacleHeight = 10;
+            ////////////////////////////////////////////////////////////
+            const startingSpeed = 4;
+            const startingLifes = 3;
+            ////////////////////////////////////////////////////////////
+            let obstacleX1 = randomInt(0, tableWidth - obstacleWidth);  //dać losowo te wartości
+            let obstacleX2 = randomInt(0, tableWidth - obstacleWidth);
+            let obstacleX3 = randomInt(0, tableWidth - obstacleWidth);
+            let obstacleX4 = randomInt(0, tableWidth - obstacleWidth);
+            let obstacleY1 = -20;
+            let obstacleY2 = -100;
+            let obstacleY3 = -300;
+            let obstacleY4 = -250;
+            let obstacleSpeed = startingSpeed; //2
+
+            let playerX = tableWidth / 2 - playerWidth / 2;
+            let playerY = (tableHeight) - (playerHeight); 
+
+            let lifeX = randomInt(0, tableWidth);
+            let lifeY = randomInt(lifeMIN, lifeMAX);
+            const lifeWidth = 20;
+            const lifeHeight = 20;
+
+            let pointX = randomInt(0, tableWidth);
+            let pointY = randomInt(pointsMIN, pointsMAX);
+            const pointWidth = 20;
+            const pointHeight = 20;
+
+            let fastX = randomInt(0, tableWidth);
+            let fastY = randomInt(fastMIN, fastMAX);
+            const fastWidth = 20;
+            const fastHeight = 20;
+
+            let slowX = randomInt(0, tableWidth);
+            let slowY = randomInt(slowMIN, slowMAX);
+            const slowWidth = 20;
+            const slowHeight = 20;
+
+            
+    
+            let lifes = startingLifes;
+            let score = 0;
+            let scoreToSpeed = 5;
+            
+            var animation;
+
+            ////////////////////// obrazki
+            // var img = document.createElement('img');
+            // img.src = 'image12.png';
+            // var pattern;
+
+            //fillStyle = pattern;
+
+            function main() {
+                canvas = document.getElementById('simpleCanvas');
+                canvasLegend = document.getElementById('simple');
+
+                if(canvas.getContext) {
+                    ctx = canvas.getContext('2d');
+                    c = canvasLegend.getContext('2d');
+                    legend();
+                    startView();
+                    //pattern = ctx.createPattern(img, 'repeat');
+                    
+                    document.body.onkeyup = function(e){
+                        if(e.keyCode == 32){
+
+                            animation = setInterval(game, 1000/60);
+
+                        }
+                    }
+    
+                }
+            
+            }
+
+            function startView() {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, tableWidth, tableHeight);
+                ctx.font = "normal 30px Arial";
+                ctx.fillStyle = "white";
+                ctx.fillText("Let's play!", tableWidth / 2 - 70, tableHeight / 2);
+                ctx.font = "normal 20px Arial";
+                ctx.fillStyle = "white";
+                ctx.fillText("Click space to start...", tableWidth / 2 - 90, tableHeight / 5 * 3);
+            }
+
+            function legend() {
+                c.fillStyle = 'black';
+                c.fillRect(0,0,300,400);
+
+                c.font = "normal 24px Arial";
+                c.fillStyle = "white";
+                c.fillText("Podstawowe informacje", 10, 25);
+
+                c.font = "normal 14px Arial";
+                c.fillStyle = "white";
+                c.fillText("- Omijaj przeszkody i zdobywaj punkty!", 10, 60);
+                c.fillText("- Do sterowania używaj myszki", 10, 80);
+                c.fillText("- Przeszkody przyśpieszają podczas gry", 10, 100);
+                c.fillText("- Mnożnik punktów rośnie podczas gry", 10, 120);
+                c.fillText("- Masz 3 życia", 10, 140);
+
+                c.font = "normal 24px Arial";
+                c.fillStyle = "white";
+                c.fillText("Legenda kolorów", 10, 200);
+
+                c.font = "normal 14px Arial";
+                c.fillStyle = "white";
+                c.fillText("Żółty                  ---> przeszkody", 10, 240);
+                c.fillText("Czerwony          ---> dodatkowe życia", 10, 260);
+                c.fillText("Zielony              ---> punkty x2", 10, 280);
+                c.fillText("Niebieski           ---> zwalnia gre x2", 10, 300);
+                c.fillText("Pomarańczowy ---> przyśpiesza gre x2", 10, 320);
+
+
+            }
+
+            function game() {
+                table(); 
+                player();
+                obstacle1();
+                obstacle2();
+                obstacle3();
+                obstacle4();
+                addLife();
+                multiplePoints();
+                fasterObstacles();
+                slowerObstacles();
+                showInfo();
+            }
+
+            //poruszanie strzłkami
+            // function goLeft() {
+            //     document.body.onkeyup = function(e){
+            //             if(e.keyCode == 37){
+
+            //                 playerX -= playerSpeed;
+
+            //             }
+            //         }
+            // }
+
+            // function goRight(){
+            //     document.body.onkeyup = function(e){
+            //             if(e.keyCode == 39){
+
+            //                 playerX += playerSpeed;
+
+            //             }
+            //         }
+            // }
+
+            function fasterObstacles() {
+                ctx.fillStyle = 'orange';
+                ctx.fillRect(fastX, fastY, fastWidth, fastHeight);
+
+                fastY += obstacleSpeed;
+                
+                if(fastY >= tableHeight + 10) {
+                    console.log("done");
+                    console.log(lifes);
+                    fastX = randomInt(0, tableWidth - lifeWidth);
+                    fastY = randomInt(fastMIN, fastMAX);
+                }
+
+                if(fastY >= playerY  && ((fastX >= playerX && fastX <= playerX + playerHeight) || (fastX + fastWidth >= playerX && fastX + fastWidth <= playerX + playerWidth) || ((fastX + fastWidth / 2) >= playerX && (fastWidth + fastWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(fastX, fastY, fastWidth, fastHeight);
+                    fastX = randomInt(0, tableWidth - obstacleWidth);
+                    fastY = randomInt(fastMIN, fastMAX);
+                    obstacleSpeed *= 1.5;
+                    
+                }
+
+            }
+
+            function slowerObstacles() {
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(slowX, slowY, slowWidth, slowHeight);
+
+                slowY += obstacleSpeed;
+                
+                if(slowY >= tableHeight + 10) {
+                    console.log("done");
+                    console.log(lifes);
+                    slowX = randomInt(0, tableWidth - lifeWidth);
+                    slowY = randomInt(slowMIN, slowMAX);
+                }
+
+                if(slowY >= playerY  && ((slowX >= playerX && slowX <= playerX + playerHeight) || (slowX + slowWidth >= playerX && slowX + slowWidth <= playerX + playerWidth) || ((slowX + slowWidth / 2) >= playerX && (slowWidth + slowWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(slowX, slowY, slowWidth, slowHeight);
+                    slowX = randomInt(0, tableWidth - obstacleWidth);
+                    slowY = randomInt(slowMIN, slowMAX);
+                    obstacleSpeed /= 1.5;
+                    
+                }
+
+            }
+
+            function multiplePoints() {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(pointX, pointY, pointWidth, pointHeight);
+
+                pointY += obstacleSpeed;
+                
+                if(pointY >= tableHeight + 10) {
+                    console.log("done");
+                    console.log(lifes);
+                    pointX = randomInt(0, tableWidth - lifeWidth);
+                    pointY = randomInt(pointsMIN, pointsMAX);
+                }
+
+                if(pointY >= playerY  && ((pointX >= playerX && pointX <= playerX + playerHeight) || (pointX + pointWidth >= playerX && pointX + pointWidth <= playerX + playerWidth) || ((pointX + pointWidth / 2) >= playerX && (pointWidth + pointWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(pointX, pointY, pointWidth, pointHeight);
+                    pointX = randomInt(0, tableWidth - obstacleWidth);
+                    pointY = randomInt(pointsMIN, pointsMAX);
+                    score *= 2;
+                    
+                }
+
+            }
+
+            function addLife() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(lifeX, lifeY, lifeWidth, lifeHeight);
+
+                lifeY += obstacleSpeed;
+                
+                if(lifeY >= tableHeight + 10) {
+                    console.log("done");
+                    console.log(lifes);
+                    lifeX = randomInt(0, tableWidth - lifeWidth);
+                    lifeY = randomInt(lifeMIN, lifeMAX);
+                }
+
+                if(lifeY >= playerY  && ((lifeX >= playerX && lifeX <= playerX + playerHeight) || (lifeX + lifeWidth >= playerX && lifeX + lifeWidth <= playerX + playerWidth) || ((lifeX + lifeWidth / 2) >= playerX && (lifeWidth + lifeWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(lifeX, lifeY, lifeWidth, lifeHeight);
+                    lifeX = randomInt(0, tableWidth - obstacleWidth);
+                    lifeY = randomInt(lifeMIN, lifeMAX);
+                    lifes += 1;
+                    
+                }
+
+            }
+
+            function obstacle1(){
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(obstacleX1, obstacleY1, obstacleWidth, obstacleHeight);
+                
+                obstacleY1 = obstacleY1 + obstacleSpeed;
+
+                if(obstacleY1 > tableHeight + 10) {
+                    console.log("done");
+                    if(300 > score > 80) {
+                        score += 2;
+                    } else if(score > 300) {
+                        score += 3;
+                    } else score += 1;
+                    
+                    console.log(score);
+                    obstacleX1 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY1 = randomInt(obstacleMIN, obstacleMAX);
+                    speedUp();
+                } 
+
+                if(obstacleY1 >= playerY  && ((obstacleX1 >= playerX && obstacleX1 <= playerX + playerHeight) || (obstacleX1 + obstacleWidth >= playerX && obstacleX1 + obstacleWidth <= playerX + playerWidth) || ((obstacleX1 + obstacleWidth / 2) >= playerX && (obstacleX1 + obstacleWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(obstacleX1, obstacleY1, obstacleWidth, obstacleHeight);
+                    obstacleX1 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY1 = randomInt(obstacleMIN, obstacleMAX);
+                    lifes -= 1;
+                    
+                }
+
+                
+            }
+
+            function obstacle2(){
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(obstacleX2, obstacleY2, obstacleWidth, obstacleHeight);
+                
+                obstacleY2 = obstacleY2 + obstacleSpeed;
+
+                if(obstacleY2 > tableHeight + 10) {
+                    console.log("done");
+                    if(300 > score > 80) {
+                        score += 2;
+                    } else if(score > 300) {
+                        score += 3;
+                    } else score += 1;
+                    
+                    console.log(score);
+                    obstacleX2 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY2 = randomInt(obstacleMIN, obstacleMAX);
+                    speedUp();
+                } 
+
+                if(obstacleY2 >= playerY  && ((obstacleX2 >= playerX && obstacleX2 <= playerX + playerHeight) || (obstacleX2 + obstacleWidth >= playerX && obstacleX2 + obstacleWidth <= playerX + playerWidth) || ((obstacleX2 + obstacleWidth / 2) >= playerX && (obstacleX2 + obstacleWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(obstacleX2, obstacleY2, obstacleWidth, obstacleHeight);
+                    obstacleX2 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY2 = randomInt(obstacleMIN, obstacleMAX);
+                    lifes -= 1;
+                    
+                }
+
+                
+            }
+
+            function obstacle3(){
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(obstacleX3, obstacleY3, obstacleWidth, obstacleHeight);
+                
+                obstacleY3 = obstacleY3 + obstacleSpeed;
+
+                if(obstacleY3 > tableHeight + 10) {
+                    console.log("done");
+                    if(300 > score > 80) {
+                        score += 2;
+                    } else if(score > 300) {
+                        score += 3;
+                    } else score += 1;
+                    
+                    console.log(score);
+                    obstacleX3 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY3 = randomInt(obstacleMIN, obstacleMAX);
+                    speedUp();
+                } 
+
+                if(obstacleY3 >= playerY  && ((obstacleX3 >= playerX && obstacleX3 <= playerX + playerHeight) || (obstacleX3 + obstacleWidth >= playerX && obstacleX3 + obstacleWidth <= playerX + playerWidth) || ((obstacleX3 + obstacleWidth / 2) >= playerX && (obstacleX3 + obstacleWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(obstacleX3, obstacleY3, obstacleWidth, obstacleHeight);
+                    obstacleX3 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY3 = randomInt(obstacleMIN, obstacleMAX);
+                    lifes -= 1;
+                    
+                }
+
+                
+            }
+
+            function obstacle4(){
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(obstacleX4, obstacleY4, obstacleWidth, obstacleHeight);
+                
+                obstacleY4 = obstacleY4 + obstacleSpeed;
+
+                if(obstacleY4 > tableHeight + 10) {
+                    console.log("done");
+                    if(300 > score > 80) {
+                        score += 2;
+                    } else if(score > 300) {
+                        score += 3;
+                    } else score += 1;
+                    
+                    console.log(score);
+                    obstacleX4 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY4 = randomInt(obstacleMIN, obstacleMAX);
+                    speedUp();
+                } 
+
+                if(obstacleY4 >= playerY  && ((obstacleX4 >= playerX && obstacleX4 <= playerX + playerHeight) || (obstacleX4 + obstacleWidth >= playerX && obstacleX4 + obstacleWidth <= playerX + playerWidth) || ((obstacleX4 + obstacleWidth / 2) >= playerX && (obstacleX4 + obstacleWidth / 2) <= playerX + playerWidth)) ) {
+                    console.log("hit!");
+                    ctx.clearRect(obstacleX4, obstacleY4, obstacleWidth, obstacleHeight);
+                    obstacleX4 = randomInt(0, tableWidth - obstacleWidth);
+                    obstacleY4 = randomInt(obstacleMIN, obstacleMAX);
+                    lifes -= 1;
+                    
+                }
+
+                
+            }
+
+
+            function showInfo() {
+                ctx.font = "normal bold 30px Arial";
+                ctx.fillStyle = "white";
+                ctx.fillText("Score " + score, 10, 30);
+                ctx.fillText("Life " + lifes, tableWidth - 100, 30);
+
+                if(lifes <= 0) {
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, tableWidth, tableHeight);
+                    ctx.font = "normal 30px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.fillText("You scored " + score + " points!", tableWidth / 2 - 135, tableHeight / 2);
+                    ctx.font = "normal 20px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.fillText("Click space to continue", tableWidth / 2 - 100, tableHeight / 5 * 3);
+                    clearInterval(animation);
+                    restartGame();
+                }
+
+                
+            }
+
+            function restartGame(){
+                lifes = startingLifes;
+                score = 0;
+                obstacleSpeed = 5;
+                lifeX = randomInt(0, tableWidth);
+                lifeY = randomInt(-400, -800);
+                pointX = randomInt(0, tableWidth);
+                pointY = randomInt(-300, -500);
+                fastX = randomInt(0, tableWidth);
+                fastY = randomInt(-150, -400);
+                slowX = randomInt(0, tableWidth);
+                slowY = randomInt(-150, -400);
+
+                
+
+                obstacleX1 = randomInt(0, tableWidth - obstacleWidth);  //dać losowo te wartości
+                obstacleX2 = randomInt(0, tableWidth - obstacleWidth);
+                obstacleX3 = randomInt(0, tableWidth - obstacleWidth);
+                obstacleX4 = randomInt(0, tableWidth - obstacleWidth);
+                obstacleY1 = -20;
+                obstacleY2 = -100;
+                obstacleY3 = -300;
+                obstacleY4 = -250;
+                obstacleSpeed = startingSpeed; //2
+
+                playerX = tableWidth / 2 - playerWidth / 2;
+                playerY = (tableHeight) - (playerHeight);
+            }
+
+            function speedUp() { //5 10 20 40 80 160
+                if(score == scoreToSpeed) {
+                    if(scoreToSpeed >= 80) {
+                        scoreToSpeed *= 1.5;
+                    } else {
+                        scoreToSpeed *= 2;
+                    }
+                    
+                    obstacleSpeed += 2;
+                }
+            }
+
+            
+
+            function randomInt(min, max) {
+	            return min + Math.floor((max - min) * Math.random());
+            }
+
+            function table() {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, tableWidth, tableHeight);
+
+                for (let linePosition = 10; linePosition < tableHeight; linePosition += 30) {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(tableWidth / 2 - 1, linePosition, 5, 15);
+                }
+                
+            }
+
+            function player() {
+                //ctx.fillStyle = pattern;
+                ctx.fillStyle = 'brown';
+                ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
+            }
+
+            function playerPosition(event) {
+                playerX = event.clientX - canvas.offsetLeft;
+                //playerY = event.clientY - canvas.offsetTop;
+                
+                if(playerX <= 0) {
+                    playerX = 0;
+                }
+
+                //if(playerY <= 0) {
+                //    playerY = 0;
+                //}
+
+                if(playerX >= tableWidth - playerWidth) {
+                    playerX = tableWidth - playerWidth;
+                }
+
+                //if(playerY >= tableHeight - playerHeight) {
+                //    playerY = tableHeight - playerHeight;
+                //}
+                
+
+            }
+
+            
+
+
+    
+
+        </script>
+    </head>
+    <body onload = "main();" onmousemove="playerPosition(event)">
+        <canvas id = "simpleCanvas" width="400" height="600"></canvas>
+        <canvas id = "simple" width="300" height="340"></canvas>
+    </body>
+</html>
+
+
